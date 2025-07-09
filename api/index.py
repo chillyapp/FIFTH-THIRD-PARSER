@@ -2,7 +2,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.responses import JSONResponse
 from typing import List, Optional
 import tempfile
-import pdfplumber
+import PyPDF2
 import re
 import os
 
@@ -20,10 +20,11 @@ async def parse_fifththird(
         tmp.write(contents)
         tmp_path = tmp.name
 
-    # Convert PDF to text using pdfplumber (Vercel-compatible)
+    # Extract text using PyPDF2
     full_text = ""
-    with pdfplumber.open(tmp_path) as pdf:
-        for page in pdf.pages:
+    with open(tmp_path, "rb") as file:
+        reader = PyPDF2.PdfReader(file)
+        for page in reader.pages:
             full_text += page.extract_text() + "\n"
 
     os.remove(tmp_path)
@@ -52,3 +53,4 @@ async def parse_fifththird(
         raise HTTPException(status_code=422, detail=f"Check total mismatch: found {total}, expected {expected_total}")
 
     return JSONResponse(content={"checks": checks, "count": count, "total": total})
+
