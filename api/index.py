@@ -1,9 +1,8 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.responses import JSONResponse
 from typing import List, Optional
-import pytesseract
 import tempfile
-import fitz  # PyMuPDF
+import pdfplumber
 import re
 import os
 
@@ -21,14 +20,11 @@ async def parse_fifththird(
         tmp.write(contents)
         tmp_path = tmp.name
 
-    # Convert PDF to text using OCR
-    doc = fitz.open(tmp_path)
+    # Convert PDF to text using pdfplumber (Vercel-compatible)
     full_text = ""
-    for page in doc:
-        pix = page.get_pixmap(dpi=300)
-        img_bytes = pix.tobytes("png")
-        text = pytesseract.image_to_string(img_bytes)
-        full_text += text + "\n"
+    with pdfplumber.open(tmp_path) as pdf:
+        for page in pdf.pages:
+            full_text += page.extract_text() + "\n"
 
     os.remove(tmp_path)
 
